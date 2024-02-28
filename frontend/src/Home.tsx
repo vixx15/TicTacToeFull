@@ -1,17 +1,91 @@
 // src/components/Home.tsx
 import { useWallet } from '@txnlab/use-wallet'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import AppCalls from './components/AppCalls'
+import { Board } from './components/Board'
+import { ChoosePlayer } from './components/ChoosePlayer'
 import ConnectWallet from './components/ConnectWallet'
 import Transact from './components/Transact'
-import AppCalls from './components/AppCalls'
+import { WinnerModal } from './components/WinnerModal'
+import AlgorandService from './utils/AlgorandService'
 
-interface HomeProps {}
+interface HomeProps { }
 
 const Home: React.FC<HomeProps> = () => {
   const [openWalletModal, setOpenWalletModal] = useState<boolean>(false)
   const [openDemoModal, setOpenDemoModal] = useState<boolean>(false)
   const [appCallsDemoModal, setAppCallsDemoModal] = useState<boolean>(false)
-  const { activeAddress } = useWallet()
+  const { activeAddress, signer } = useWallet()
+
+  useEffect(() => {
+    console.log('Active address has changed:', activeAddress)
+  }, [activeAddress]) // Dependency array includes activeAddress, so the effect runs when it changes
+
+  useEffect(() => {
+    if (activeAddress && signer) {
+      AlgorandService.initializeAppClient(activeAddress, signer)
+    }
+  }, [activeAddress, signer])
+
+  const [isX, setIsX] = useState<boolean>(true)
+  const [newGame, setNewGame] = useState<boolean>(false)
+  const [squares, setSquares] = useState<Array<any>>(Array(9).fill(null))
+  const [winner, setWinner] = useState<string>('')
+
+  function handlePlayerX() {
+    setIsX(true)
+  }
+
+  function handlePlayerO() {
+    setIsX(false)
+  }
+
+  function handlePlayer(i: number) {
+    if (calculateWinner(squares) || squares[i]) {
+      return
+    }
+
+    squares[i] = isX ? 'X' : 'O'
+    setSquares(squares)
+    setIsX(!isX)
+  }
+
+  function handleRestartGame() {
+    setIsX(true)
+    setSquares(Array(9).fill(null))
+  }
+  function handleNewGame() {
+    setIsX(true)
+    setSquares(Array(9).fill(null))
+    setNewGame(true)
+  }
+
+  function handleQuitGame() {
+    setIsX(true)
+    setSquares(Array(9).fill(null))
+    setNewGame(false)
+  }
+  function calculateWinner(squares: Array<any>) {
+    const winningPatterns = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ]
+
+    for (let i = 0; i < winningPatterns.length; i++) {
+      const [a, b, c] = winningPatterns[i]
+
+      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+        return squares[a]
+      }
+    }
+    return null
+  }
 
   const toggleWalletModal = () => {
     setOpenWalletModal(!openWalletModal)
@@ -23,6 +97,23 @@ const Home: React.FC<HomeProps> = () => {
 
   const toggleAppCallsModal = () => {
     setAppCallsDemoModal(!appCallsDemoModal)
+  }
+
+  const handleDeployClick = async (): Promise<void> => {
+    try {
+      const deployParams = {
+        onSchemaBreak: 'append',
+        onUpdate: 'append',
+      }
+      await AlgorandService.deployContract(deployParams)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const playMove = async (positionIndex: number): Promise<string> => {
+    const response = await AlgorandService.playActionLogic(positionIndex)
+    return response
   }
 
   return (
@@ -46,6 +137,22 @@ const Home: React.FC<HomeProps> = () => {
               Getting started
             </a>
 
+            <div className="flex min-h-screen bg-[#192a32] flex-col items-center py-2">
+              <title>Tic-Tic-Toe Game</title>
+              <link rel="icon" href="/favicon.ico" />
+
+              <h1 className="text-4xl md:text-6xl font-extrabold mt-4 text-[#30c4bd] ">
+                Tic <span className="text-[#f3b236]">Tac </span> Toe
+              </h1>
+
+              {!newGame ? (
+                <ChoosePlayer handleNewGame={handleNewGame} handlePlayerX={handlePlayerX} handlePlayerO={handlePlayerO} />
+              ) : (
+                <Board winner={winner} playerX={isX} squares={squares} handlePlayer={handlePlayer} handleRestartGame={handleRestartGame} />
+              )}
+              {winner && <WinnerModal winner={winner} handleQuitGame={handleQuitGame} handleNewGame={handleNewGame} />}
+            </div>
+
             <div className="divider" />
             <button data-test-id="connect-wallet" className="btn m-2" onClick={toggleWalletModal}>
               Wallet Connection
@@ -66,7 +173,12 @@ const Home: React.FC<HomeProps> = () => {
 
           <ConnectWallet openModal={openWalletModal} closeModal={toggleWalletModal} />
           <Transact openModal={openDemoModal} setModalState={setOpenDemoModal} />
-          <AppCalls openModal={appCallsDemoModal} setModalState={setAppCallsDemoModal} />
+          <AppCalls
+            openModal={appCallsDemoModal}
+            setModalState={setAppCallsDemoModal}
+            onDeployClick={handleDeployClick}
+            playMove={playMove}
+          />
         </div>
       </div>
     </div>

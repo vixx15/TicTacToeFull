@@ -21,7 +21,9 @@ if (import.meta.env.VITE_ALGOD_NETWORK === '') {
         port: String(kmdConfig.port),
       },
     },
+
   ]
+
 } else {
   providersArray = [
     { id: PROVIDER_ID.DEFLY, clientStatic: DeflyWalletConnect },
@@ -46,6 +48,8 @@ export default function App() {
     },
     algosdkStatic: algosdk,
   })
+
+  console.log(providersArray[0])
 
   return (
     <SnackbarProvider maxSnack={3}>

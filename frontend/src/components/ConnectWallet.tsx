@@ -1,5 +1,6 @@
-import { Provider, useWallet } from '@txnlab/use-wallet'
-import Account from './Account'
+import { Provider, useWallet } from '@txnlab/use-wallet';
+import { useEffect } from 'react';
+import Account from './Account';
 
 interface ConnectWalletInterface {
   openModal: boolean
@@ -8,6 +9,10 @@ interface ConnectWalletInterface {
 
 const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
   const { providers, activeAddress } = useWallet()
+
+  useEffect(() => {
+    console.log('Active address has been updated:', activeAddress);
+  }, [activeAddress]); // This effect depends on `activeAddress` and runs when `activeAddress` changes
 
   const isKmd = (provider: Provider) => provider.metadata.name.toLowerCase() === 'kmd'
 
