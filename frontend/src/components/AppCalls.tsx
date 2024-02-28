@@ -1,15 +1,10 @@
-import * as algokit from '@algorandfoundation/algokit-utils'
-import { AppDetails } from '@algorandfoundation/algokit-utils/types/app-client'
-import { useWallet } from '@txnlab/use-wallet'
 import { useSnackbar } from 'notistack'
-import { useEffect, useState } from 'react'
-import { TicTacToeSinglePlayerClient } from '../contracts/tic_tac_toe_single_player'
-import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
+import { useState } from 'react'
 
 interface AppCallsInterface {
   openModal: boolean
   setModalState: (value: boolean) => void
-  onDeployClick: () => Promise<string>
+  onDeployClick: () => Promise<void>
   playMove: (position: number) => Promise<string>
   getAppState: () => Promise<void>
 }
@@ -38,7 +33,7 @@ const AppCalls = ({ openModal, setModalState, onDeployClick, playMove, getAppSta
   const [loading, setLoading] = useState<boolean>(false)
   const [contractInput, setContractInput] = useState<number>(0)
   const [contractDeployed, setContractDeployed] = useState<boolean>(false)
-  const [appClient, setAppClient] = useState<TicTacToeSinglePlayerClient | null>(null) // Store appClient in state
+  /*const [appClient, setAppClient] = useState<TicTacToeSinglePlayerClient | null>(null) // Store appClient in state
 
   const { signer, activeAddress } = useWallet()
   const algodConfig = getAlgodConfigFromViteEnvironment()
@@ -48,9 +43,9 @@ const AppCalls = ({ openModal, setModalState, onDeployClick, playMove, getAppSta
     const timestamp = Date.now()
     return `${baseName}_${timestamp}`
   }
-
+*/
   // Initialize appClient once activeAddress is available
-  useEffect(() => {
+  /*useEffect(() => {
     if (activeAddress) {
       const indexer = algokit.getAlgoIndexerClient({
         server: indexerConfig.server,
@@ -75,7 +70,7 @@ const AppCalls = ({ openModal, setModalState, onDeployClick, playMove, getAppSta
       setAppClient(newAppClient)
     }
   }, [activeAddress]) // Dependency on activeAddress ensures appClient is re-initialized if the address changes
-
+*/
   const { enqueueSnackbar } = useSnackbar()
 
   const handleDeployClick = async () => {
@@ -128,7 +123,7 @@ const AppCalls = ({ openModal, setModalState, onDeployClick, playMove, getAppSta
       });
     };
   */
-  const callHelloFunction = async () => {
+  /*const callHelloFunction = async () => {
     if (!contractDeployed || !appClient) {
       enqueueSnackbar('Please deploy the contract first.', { variant: 'warning' })
       return
@@ -154,7 +149,7 @@ const AppCalls = ({ openModal, setModalState, onDeployClick, playMove, getAppSta
 
   const sendAppCall = async () => {
     setLoading(true)
-    /*
+
         const appDetails = {
           resolveBy: 'creatorAndName',
           sender: { signer, addr: activeAddress } as TransactionSignerAccount,
@@ -163,12 +158,7 @@ const AppCalls = ({ openModal, setModalState, onDeployClick, playMove, getAppSta
         } as AppDetails
 
         const appClient = new TicTacToeSinglePlayerClient(appDetails, algodClient)
-    */
-    // Please note, in typical production scenarios,
-    // you wouldn't want to use deploy directly from your frontend.
-    // Instead, you would deploy your contract on your backend and reference it by id.
-    // Given the simplicity of the starter contract, we are deploying it on the frontend
-    // for demonstration purposes.
+
     const deployParams = {
       onSchemaBreak: 'append',
       onUpdate: 'append',
@@ -188,7 +178,7 @@ const AppCalls = ({ openModal, setModalState, onDeployClick, playMove, getAppSta
     enqueueSnackbar(`Response from the contract: ${response?.return}`, { variant: 'success' })
     setLoading(false)
   }
-
+*/
   return (
     <dialog id="appcalls_modal" className={`modal ${openModal ? 'modal-open' : ''} bg-slate-200`}>
       <form method="dialog" className="modal-box">

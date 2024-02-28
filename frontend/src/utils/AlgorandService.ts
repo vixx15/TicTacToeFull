@@ -56,6 +56,7 @@ class AlgorandService {
     }) as Indexer
   }
 
+  //OVO MORA SAMO JEDNOM DA SE  IZVRSI DOBRO PAZI GDJE, JER AKO SE KREIRA NOVI APP CLIENT ON NEMA REFERENCU NA NASU PLIKACIJU ZBOG OVOG uniqueName-a
   public async initializeAppClient(activeAddress: string, signer: any): Promise<void> {
     // Adjust the parameters and types as necessary
     const appDetails: AppDetails = {
@@ -66,6 +67,8 @@ class AlgorandService {
       findExistingUsing: this.indexer,
     }
     this.appClient = new TicTacToeSinglePlayerClient(appDetails, this.algodClient)
+
+    console.log('Novi app client')
   }
 
   private generateUniqueName(baseName: string): string {
@@ -73,9 +76,13 @@ class AlgorandService {
     return `${baseName}_${timestamp}`
   }
 
-  public async deployContract(deployParams: DeployParams): Promise<string> {
-    if (!this.appClient) throw new Error('appClient is not initialized')
+  public async deployContract(deployParams: DeployParams, activeAddress: string, signer: any): Promise<string> {
+    //if (!this.appClient) {
+    this.initializeAppClient(activeAddress, signer)
+    // }
+    //throw new Error('appClient is not initialized')
     try {
+      console.log(deployParams)
       await this.appClient.deploy(deployParams).then((response) => {
         this.appId = Number(response.appId)
         console.log(`Contract deployed successfully with appId:${this.appId}`)

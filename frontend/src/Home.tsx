@@ -1,5 +1,6 @@
 // src/components/Home.tsx
 import { useWallet } from '@txnlab/use-wallet'
+import { useSnackbar } from 'notistack'
 import React, { useEffect, useState } from 'react'
 import AppCalls from './components/AppCalls'
 import { Board } from './components/Board'
@@ -16,14 +17,16 @@ const Home: React.FC<HomeProps> = () => {
   const [openDemoModal, setOpenDemoModal] = useState<boolean>(false)
   const [appCallsDemoModal, setAppCallsDemoModal] = useState<boolean>(false)
   const { activeAddress, signer } = useWallet()
+  const { enqueueSnackbar } = useSnackbar()
   const [gameState, setGameState] = useState<TicTacToeGameState | null>(null)
   useEffect(() => {
     console.log('Active address has changed:', activeAddress)
   }, [activeAddress]) // Dependency array includes activeAddress, so the effect runs when it changes
 
   useEffect(() => {
+    console.log('UE UE UE')
     if (activeAddress && signer) {
-      AlgorandService.initializeAppClient(activeAddress, signer)
+      // AlgorandService.initializeAppClient(activeAddress, signer)
     }
   }, [activeAddress, signer])
 
@@ -99,15 +102,17 @@ const Home: React.FC<HomeProps> = () => {
     setAppCallsDemoModal(!appCallsDemoModal)
   }
 
-  const handleDeployClick = async (): Promise<void> => {
+  const handleDeployClick = async () => {
     try {
       const deployParams = {
         onSchemaBreak: 'append',
         onUpdate: 'append',
       }
-      await AlgorandService.deployContract(deployParams)
+      const response = await AlgorandService.deployContract(deployParams, activeAddress, signer)
+
+      enqueueSnackbar(`Message: ${response}`, { variant: 'success' })
     } catch (error) {
-      throw error
+      enqueueSnackbar(`Deployment failed: ${error.message}`, { variant: 'error' })
     }
   }
 
@@ -171,6 +176,12 @@ const Home: React.FC<HomeProps> = () => {
             {activeAddress && (
               <button data-test-id="appcalls-demo" className="btn m-2" onClick={toggleAppCallsModal}>
                 Contract Interactions Demo
+              </button>
+            )}
+
+            {activeAddress && (
+              <button data-test-id="appcalls-demo" className="btn m-2" onClick={handleDeployClick}>
+                Deploy
               </button>
             )}
           </div>
