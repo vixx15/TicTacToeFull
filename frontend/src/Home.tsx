@@ -7,7 +7,7 @@ import { ChoosePlayer } from './components/ChoosePlayer'
 import ConnectWallet from './components/ConnectWallet'
 import Transact from './components/Transact'
 import { WinnerModal } from './components/WinnerModal'
-import AlgorandService from './utils/AlgorandService'
+import AlgorandService, { TicTacToeGameState } from './utils/AlgorandService'
 
 interface HomeProps { }
 
@@ -16,7 +16,7 @@ const Home: React.FC<HomeProps> = () => {
   const [openDemoModal, setOpenDemoModal] = useState<boolean>(false)
   const [appCallsDemoModal, setAppCallsDemoModal] = useState<boolean>(false)
   const { activeAddress, signer } = useWallet()
-
+  const [gameState, setGameState] = useState<TicTacToeGameState | null>(null)
   useEffect(() => {
     console.log('Active address has changed:', activeAddress)
   }, [activeAddress]) // Dependency array includes activeAddress, so the effect runs when it changes
@@ -111,6 +111,10 @@ const Home: React.FC<HomeProps> = () => {
     }
   }
 
+  const getApplicationState = async (): Promise<void> => {
+    await AlgorandService.getApplicationState()
+  }
+
   const playMove = async (positionIndex: number): Promise<string> => {
     const response = await AlgorandService.playActionLogic(positionIndex)
     return response
@@ -178,6 +182,7 @@ const Home: React.FC<HomeProps> = () => {
             setModalState={setAppCallsDemoModal}
             onDeployClick={handleDeployClick}
             playMove={playMove}
+            getAppState={getApplicationState}
           />
         </div>
       </div>

@@ -111,6 +111,8 @@ class AlgorandService {
         const key = decodeBase64(state.key)
         const value = state.value.type === 2 ? state.value.uint : decodeBase64(state.value.bytes)
 
+        console.log(`${key}: ${value}`)
+
         switch (key) {
           case 'player_x_state':
             stateData.playerXState = value as number
@@ -134,6 +136,7 @@ class AlgorandService {
         }
       })
 
+      console.log(stateData)
       return stateData as TicTacToeGameState // Cast to TicTacToeGameState since we know all fields should be populated
     } catch (e: unknown) {
       console.error('Error retrieving application state:', e.message)
