@@ -1,6 +1,6 @@
 import * as algokit from '@algorandfoundation/algokit-utils'
 import { AppDetails } from '@algorandfoundation/algokit-utils/types/app-client'
-import { Algodv2, Indexer } from 'algosdk'
+import { Algodv2, Indexer, TransactionSigner } from 'algosdk'
 import { TicTacToeSinglePlayerClient } from '../contracts/tic_tac_toe_single_player'
 import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from './network/getAlgoClientConfigs'
 
@@ -76,6 +76,7 @@ class AlgorandService {
     return `${baseName}_${timestamp}`
   }
 
+  //TODO omoguci da se samo jednom deploy-uje ili na buttunu ili ovde
   public async deployContract(deployParams: DeployParams, activeAddress: string, signer: any): Promise<string> {
     //if (!this.appClient) {
     this.initializeAppClient(activeAddress, signer)
@@ -93,6 +94,33 @@ class AlgorandService {
     }
 
     return 'Error occured while deploying!'
+  }
+
+  public async payWinner(activeAddress: string, signer: TransactionSigner): Promise<string> {
+    // Ensure the appClient has been initialized
+    if (!this.appClient) {
+      throw new Error('AppClient is not initialized.')
+    }
+
+    try {
+      // Transaction parameters
+      const suggestedParams = await this.algodClient.getTransactionParams().do()
+
+      console.log(suggestedParams)
+      // Constructing params for the ABI call
+      const params = {
+        //suggestedParams, PROVJERI DA LI TREBAJU OVI SUGGESTED PARAMS CINI SE DA RADI I SA NJIMA I BEZ NJIH SAMO SE NIGDJE NE VIDI TRANSAKCIJA
+      }
+
+      // Making the call
+      const result = await this.appClient.moneyRefundLogic({}, params)
+
+      console.log('Money refund logic call result:', result)
+      return 'Money refund logic call successfully executed.'
+    } catch (error) {
+      console.error('Failed to execute money refund logic:', error)
+      throw new Error(`Error making the transaction: ${error.message}`)
+    }
   }
 
   public async playActionLogic(positionIndex: number): Promise<any> {

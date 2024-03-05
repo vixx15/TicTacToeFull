@@ -3,7 +3,6 @@ import { XIcon } from './XIcon'
 
 interface PlayerProp {
   winner: string
-  playerX: boolean
   squares: Array<any>
   handlePlayer(i: number): void
   handleRestartGame(): void
@@ -14,7 +13,7 @@ interface SquareProp {
   onClick(): void
 }
 
-export const Board = ({ winner, playerX, handlePlayer, handleRestartGame, squares }: PlayerProp) => {
+export const Board = ({ winner, handlePlayer, handleRestartGame, squares }: PlayerProp) => {
   function Square({ value, onClick }: SquareProp) {
     return (
       <button className="square" onClick={onClick} disabled={winner ? true : false}>
@@ -44,17 +43,6 @@ export const Board = ({ winner, playerX, handlePlayer, handleRestartGame, square
     <div>
       <div className="board">
         <div className=" w-[300px] md:[w-400px] rounded-lg flex items-center justify-center space-x-10">
-          <div>
-            {playerX ? (
-              <div className="text-white bg-gray-700 text-xl px-4 py-1 w-28 rounded-lg font-medium uppercase">
-                <span className="text-[#30c4bd] text-2xl font-bold">X</span> Turn
-              </div>
-            ) : (
-              <div className="text-white bg-gray-700 text-xl px-4 py-1 w-28 rounded-lg font-medium uppercase">
-                <span className=" text-[#f3b236] text-2xl font-bold">O</span> Turn
-              </div>
-            )}
-          </div>
           <button
             onClick={handleRestartGame}
             className="group button px-2 py-1 hover:ring-4 hover:ring-cyan-300 rounded-md bg-[#f3b236] hover:bg-[#30c4bd]"

@@ -4,7 +4,6 @@ import { useSnackbar } from 'notistack'
 import React, { useEffect, useState } from 'react'
 import AppCalls from './components/AppCalls'
 import { Board } from './components/Board'
-import { ChoosePlayer } from './components/ChoosePlayer'
 import ConnectWallet from './components/ConnectWallet'
 import Transact from './components/Transact'
 import { WinnerModal } from './components/WinnerModal'
@@ -22,52 +21,72 @@ const Home: React.FC<HomeProps> = () => {
   useEffect(() => {
     console.log('Active address has changed:', activeAddress)
   }, [activeAddress]) // Dependency array includes activeAddress, so the effect runs when it changes
-
+  /*
   useEffect(() => {
     console.log('UE UE UE')
     if (activeAddress && signer) {
       // AlgorandService.initializeAppClient(activeAddress, signer)
     }
   }, [activeAddress, signer])
-
-  const [isX, setIsX] = useState<boolean>(true)
+*/
   const [newGame, setNewGame] = useState<boolean>(false)
   const [squares, setSquares] = useState<Array<any>>(Array(9).fill(null))
   const [winner, setWinner] = useState<string>('')
-
-  function handlePlayerX() {
-    setIsX(true)
-  }
-
-  function handlePlayerO() {
-    setIsX(false)
-  }
+  const [draw, setDraw] = useState<boolean>(false)
+  useEffect(() => {
+    if (gameState?.playerXState !== undefined && gameState.playerOState !== undefined) {
+      setSquares(getBoardSquares(gameState?.playerXState, gameState?.playerOState))
+    }
+  }, [gameState?.playerXState])
+  useEffect(() => {
+    if (gameState?.gameStatus !== undefined) {
+      if (gameState.gameStatus == 1) {
+        setWinner('X')
+      } else if (gameState.gameStatus == 2) {
+        setWinner('O')
+      } else if (gameState.gameStatus == 3) {
+        setDraw(true)
+      }
+    }
+  }, [gameState?.playerXState])
 
   function handlePlayer(i: number) {
     if (calculateWinner(squares) || squares[i]) {
       return
     }
-
-    squares[i] = isX ? 'X' : 'O'
-    setSquares(squares)
-    setIsX(!isX)
+    playMove(i)
   }
 
   function handleRestartGame() {
-    setIsX(true)
     setSquares(Array(9).fill(null))
   }
   function handleNewGame() {
-    setIsX(true)
+    setGameState(null)
     setSquares(Array(9).fill(null))
-    setNewGame(true)
   }
 
   function handleQuitGame() {
-    setIsX(true)
     setSquares(Array(9).fill(null))
     setNewGame(false)
   }
+
+  function getBoardSquares(playerXState: number, playerOState: number): Array<string | null> {
+    const squares = Array<string | null>(9).fill(null)
+
+    for (let i = 0; i < 9; i++) {
+      // Check if the bit at position i is set for player X
+      if ((playerXState & (1 << i)) !== 0) {
+        squares[i] = 'X'
+      }
+      // Check if the bit at position i is set for player O
+      else if ((playerOState & (1 << i)) !== 0) {
+        squares[i] = 'O'
+      }
+    }
+
+    return squares
+  }
+
   function calculateWinner(squares: Array<any>) {
     const winningPatterns = [
       [0, 1, 2],
@@ -109,20 +128,42 @@ const Home: React.FC<HomeProps> = () => {
         onUpdate: 'append',
       }
       const response = await AlgorandService.deployContract(deployParams, activeAddress, signer)
-
+      getApplicationState()
       enqueueSnackbar(`Message: ${response}`, { variant: 'success' })
     } catch (error) {
       enqueueSnackbar(`Deployment failed: ${error.message}`, { variant: 'error' })
     }
   }
 
-  const getApplicationState = async (): Promise<void> => {
-    await AlgorandService.getApplicationState()
+  const handlePrize = async () => {
+    try {
+      const response = await AlgorandService.payWinner(activeAddress, signer)
+      enqueueSnackbar(`Message: ${response}`, { variant: 'success' })
+    } catch (error) {
+      enqueueSnackbar(`Transaction failed: ${error.message}`, { variant: 'error' })
+    }
   }
 
-  const playMove = async (positionIndex: number): Promise<string> => {
+  const getApplicationState = async (): Promise<void> => {
+    const state = await AlgorandService.getApplicationState()
+    setGameState(state)
+  }
+
+  const playMove = async (positionIndex: number): Promise<boolean> => {
     const response = await AlgorandService.playActionLogic(positionIndex)
-    return response
+      .then((response) => {
+        enqueueSnackbar(`Response from the contract: ${response}`, { variant: 'success' })
+        getApplicationState()
+        return true
+      })
+      .catch((e: Error) => {
+        enqueueSnackbar(`Error calling the contract: ${e.message}`, { variant: 'error' })
+        return false
+      })
+      .finally(() => {
+        //setLoading(false)
+      })
+    return false
   }
 
   return (
@@ -154,11 +195,13 @@ const Home: React.FC<HomeProps> = () => {
                 Tic <span className="text-[#f3b236]">Tac </span> Toe
               </h1>
 
-              {!newGame ? (
+              {
+                /*!newGame ? (
                 <ChoosePlayer handleNewGame={handleNewGame} handlePlayerX={handlePlayerX} handlePlayerO={handlePlayerO} />
-              ) : (
-                <Board winner={winner} playerX={isX} squares={squares} handlePlayer={handlePlayer} handleRestartGame={handleRestartGame} />
-              )}
+              ) :*/ gameState?.gameStatus !== undefined && (
+                  <Board winner={winner} squares={squares} handlePlayer={handlePlayer} handleRestartGame={handleRestartGame} />
+                )
+              }
               {winner && <WinnerModal winner={winner} handleQuitGame={handleQuitGame} handleNewGame={handleNewGame} />}
             </div>
 
@@ -172,6 +215,10 @@ const Home: React.FC<HomeProps> = () => {
                 Transactions Demo
               </button>
             )}
+
+            <button data-test-id="connect-wallet" className="btn m-2" onClick={handlePrize}>
+              Collect Prize
+            </button>
 
             {activeAddress && (
               <button data-test-id="appcalls-demo" className="btn m-2" onClick={toggleAppCallsModal}>
