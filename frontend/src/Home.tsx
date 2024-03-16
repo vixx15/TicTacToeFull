@@ -170,23 +170,7 @@ const Home: React.FC<HomeProps> = () => {
     <div className="hero min-h-screen bg-teal-400">
       <div className="hero-content text-center rounded-lg p-6 max-w-md bg-white mx-auto">
         <div className="max-w-md">
-          <h1 className="text-4xl">
-            Welcome to <div className="font-bold">AlgoKit 🙂</div>
-          </h1>
-          <p className="py-6">
-            This starter has been generated using official AlgoKit React template. Refer to the resource below for next steps.
-          </p>
-
           <div className="grid">
-            <a
-              data-test-id="getting-started"
-              className="btn btn-primary m-2"
-              target="_blank"
-              href="https://github.com/algorandfoundation/algokit-cli"
-            >
-              Getting started
-            </a>
-
             <div className="flex min-h-screen bg-[#192a32] flex-col items-center py-2">
               <title>Tic-Tic-Toe Game</title>
               <link rel="icon" href="/favicon.ico" />
@@ -202,7 +186,9 @@ const Home: React.FC<HomeProps> = () => {
                   <Board winner={winner} squares={squares} handlePlayer={handlePlayer} handleRestartGame={handleRestartGame} />
                 )
               }
-              {winner && <WinnerModal winner={winner} handleQuitGame={handleQuitGame} handleNewGame={handleNewGame} />}
+              {gameState?.gameStatus !== undefined && gameState?.gameStatus !== 0 && (
+                <WinnerModal winnerNumber={gameState?.gameStatus} handleQuitGame={handleQuitGame} handleNewGame={handleNewGame} />
+              )}
             </div>
 
             <div className="divider" />
@@ -216,10 +202,11 @@ const Home: React.FC<HomeProps> = () => {
               </button>
             )}
 
-            <button data-test-id="connect-wallet" className="btn m-2" onClick={handlePrize}>
-              Collect Prize
-            </button>
-
+            {winner && (
+              <button data-test-id="connect-wallet" className="btn m-2" onClick={handlePrize}>
+                Collect Prize
+              </button>
+            )}
             {activeAddress && (
               <button data-test-id="appcalls-demo" className="btn m-2" onClick={toggleAppCallsModal}>
                 Contract Interactions Demo

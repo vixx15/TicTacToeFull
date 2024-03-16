@@ -1,20 +1,38 @@
-import { OIcon } from './OIcon'
-import { XIcon } from './XIcon'
-
 interface GameProps {
-  winner: string
+  winnerNumber: number // Updated to accept a number
   handleQuitGame(): void
   handleNewGame(): void
 }
 
-export const WinnerModal = ({ winner, handleQuitGame, handleNewGame }: GameProps) => {
+export const WinnerModal = ({ winnerNumber, handleQuitGame, handleNewGame }: GameProps) => {
+  // Determine what to display based on winnerNumber
+  let content
+  switch (winnerNumber) {
+    case 1:
+      content = (
+        <>
+          <p className="uppercase text-[#30c4bd]">X Takes the Round</p>
+        </>
+      )
+      break
+    case 2:
+      content = (
+        <>
+          <p className="uppercase text-[#30c4bd]">O Takes the Round</p>
+        </>
+      )
+      break
+    case 3:
+      content = <p className="uppercase text-[#f3b236]">It's a tie!</p>
+      break
+    default:
+      content = <p className="text-[#f3b236]">Invalid state</p>
+  }
+
   return (
-    <div className="bg-gray-900/90 z-10 min-h-screen w-full absolute top-0 left-0">
+    <div className="z-10 min-h-screen w-full absolute top-0 left-0">
       <div className="w-[500px] h-[250px] rounded-xl bg-[#1f3540] space-y-10 px-6 py-4 mx-auto mt-52 flex items-center justify-center flex-col">
-        <h2 className="flex flex-col items-center justify-center space-y-6 text-2xl md:text-4xl font-bold">
-          {winner === 'X' ? <XIcon /> : <OIcon />}
-          <p className="uppercase text-[#30c4bd]">Takes the Round</p>
-        </h2>
+        <h2 className="flex flex-col items-center justify-center space-y-6 text-2xl md:text-4xl font-bold">{content}</h2>
 
         <div className="flex items-center justify-center space-x-16">
           <button
