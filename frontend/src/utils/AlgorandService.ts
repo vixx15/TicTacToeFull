@@ -1,37 +1,21 @@
 import * as algokit from '@algorandfoundation/algokit-utils'
 import { AppDetails } from '@algorandfoundation/algokit-utils/types/app-client'
-import { Algodv2, Indexer, TransactionSigner } from 'algosdk'
+import { Algodv2, Indexer } from 'algosdk'
 import { TicTacToeSinglePlayerClient } from '../contracts/tic_tac_toe_single_player'
 import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from './network/getAlgoClientConfigs'
 
 export interface TicTacToeGameState {
   playerXState: number
   playerOState: number
-  boardState: string // Assuming this will be decoded to a string representation of the board
+  boardState: string
   playerOIndex: number
   betAmount: number
-  gameStatus: number // Consider using an enum for readability, e.g., { 0: 'NotStarted', 1: 'InProgress', 2: 'Finished' }
+  gameStatus: number
 }
 
 interface DeployParams {
-  // Define according to your contract's deployment parameters
   onSchemaBreak: string
   onUpdate: string
-}
-
-interface GlobalStateSchema {
-  key: string
-  value: {
-    type: number // Or a more specific enum/type based on the SDK documentation
-    bytes?: string
-    uint?: number
-  }
-}
-
-interface ApplicationInfoResponse {
-  params: {
-    'global-state'?: GlobalStateSchema[]
-  }
 }
 
 class AlgorandService {
@@ -39,7 +23,7 @@ class AlgorandService {
   private indexer: Indexer
   private appClient: TicTacToeSinglePlayerClient | null = null
   private appId: number = 0
-
+  public appAddress: string = ''
   constructor() {
     const algodConfig = getAlgodConfigFromViteEnvironment()
     this.algodClient = algokit.getAlgoClient({
@@ -55,10 +39,7 @@ class AlgorandService {
       token: indexerConfig.token,
     }) as Indexer
   }
-
-  //OVO MORA SAMO JEDNOM DA SE  IZVRSI DOBRO PAZI GDJE, JER AKO SE KREIRA NOVI APP CLIENT ON NEMA REFERENCU NA NASU PLIKACIJU ZBOG OVOG uniqueName-a
   public async initializeAppClient(activeAddress: string, signer: any): Promise<void> {
-    // Adjust the parameters and types as necessary
     const appDetails: AppDetails = {
       resolveBy: 'creatorAndName',
       name: this.generateUniqueName('TicTacToe'),
@@ -76,58 +57,47 @@ class AlgorandService {
     return `${baseName}_${timestamp}`
   }
 
-  //TODO omoguci da se samo jednom deploy-uje ili na buttunu ili ovde
   public async deployContract(deployParams: DeployParams, activeAddress: string, signer: any): Promise<string> {
-    //if (!this.appClient) {
     this.initializeAppClient(activeAddress, signer)
-    // }
-    //throw new Error('appClient is not initialized')
     try {
       console.log(deployParams)
-      await this.appClient.deploy(deployParams).then((response) => {
-        this.appId = Number(response.appId)
-        console.log(`Contract deployed successfully with appId:${this.appId}`)
-        return `Contract deployed successfully with appId:${this.appId}`
-      })
-    } catch (error) {
-      throw new Error(`Error deploying the contract: ${error.message}`)
-    }
+      const response = await this.appClient.deploy(deployParams)
+      this.appId = Number(response.appId)
+      this.appAddress = response.appAddress
+      console.log(`Contract deployed successfully with appId:${this.appId}`)
 
-    return 'Error occured while deploying!'
+      return `Contract deployed successfully with appId: ${this.appId}`
+    } catch (error) {
+      return 'Error occured while deploying!'
+    }
   }
 
-  public async payWinner(activeAddress: string, signer: TransactionSigner): Promise<string> {
-    // Ensure the appClient has been initialized
+  public async payWinner(): Promise<string> {
     if (!this.appClient) {
       throw new Error('AppClient is not initialized.')
     }
 
     try {
-      // Transaction parameters
       const suggestedParams = await this.algodClient.getTransactionParams().do()
 
       console.log(suggestedParams)
-      // Constructing params for the ABI call
       const params = {
         //suggestedParams, PROVJERI DA LI TREBAJU OVI SUGGESTED PARAMS CINI SE DA RADI I SA NJIMA I BEZ NJIH SAMO SE NIGDJE NE VIDI TRANSAKCIJA
       }
-
-      // Making the call
       const result = await this.appClient.moneyRefundLogic({}, params)
 
       console.log('Money refund logic call result:', result)
-      return 'Money refund logic call successfully executed.'
+      return 'Prize sucessfully sent to the winner.'
     } catch (error) {
       console.error('Failed to execute money refund logic:', error)
       throw new Error(`Error making the transaction: ${error.message}`)
     }
   }
 
-  public async playActionLogic(positionIndex: number): Promise<any> {
+  public async playActionLogic(positionIndex: number) {
     if (!this.appClient) throw new Error('appClient is not initialized')
     try {
-      const response = await this.appClient.playActionLogic({ position_index: positionIndex })
-      return response.return
+      await this.appClient.playActionLogic({ position_index: positionIndex })
     } catch (error) {
       throw new Error(`Error calling the contract: ${error.message}`)
     }
@@ -140,8 +110,7 @@ class AlgorandService {
 
     try {
       const appInfo = await this.algodClient.getApplicationByID(this.appId).do()
-      const stateData: Partial<TicTacToeGameState> = {} // Use Partial<> since we'll be populating it dynamically
-
+      const stateData: Partial<TicTacToeGameState> = {}
       appInfo.params['global-state'].forEach((state) => {
         const key = decodeBase64(state.key)
         const value = state.value.type === 2 ? state.value.uint : decodeBase64(state.value.bytes)
@@ -167,7 +136,6 @@ class AlgorandService {
           case 'game_status':
             stateData.gameStatus = value as number
             break
-          // Add cases for other state variables as needed
         }
       })
 
@@ -180,13 +148,10 @@ class AlgorandService {
   }
 }
 
-// Utility function for decoding base64
 function decodeBase64(base64String: string): string {
   if (typeof Buffer !== 'undefined') {
-    // For Node.js
     return Buffer.from(base64String, 'base64').toString()
   } else {
-    // For browsers
     return atob(base64String)
   }
 }

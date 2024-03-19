@@ -2,10 +2,8 @@ import { OIcon } from './OIcon'
 import { XIcon } from './XIcon'
 
 interface PlayerProp {
-  winner: string
   squares: Array<any>
   handlePlayer(i: number): void
-  handleRestartGame(): void
 }
 
 interface SquareProp {
@@ -13,10 +11,10 @@ interface SquareProp {
   onClick(): void
 }
 
-export const Board = ({ winner, handlePlayer, handleRestartGame, squares }: PlayerProp) => {
+export const Board = ({ handlePlayer, squares }: PlayerProp) => {
   function Square({ value, onClick }: SquareProp) {
     return (
-      <button className="square" onClick={onClick} disabled={winner ? true : false}>
+      <button className="square" onClick={onClick}>
         {value}
       </button>
     )
@@ -42,27 +40,6 @@ export const Board = ({ winner, handlePlayer, handleRestartGame, squares }: Play
   return (
     <div>
       <div className="board">
-        <div className=" w-[300px] md:[w-400px] rounded-lg flex items-center justify-center space-x-10">
-          <button
-            onClick={handleRestartGame}
-            className="group button px-2 py-1 hover:ring-4 hover:ring-cyan-300 rounded-md bg-[#f3b236] hover:bg-[#30c4bd]"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8 group-hover:rotate-180 transition duration-300 eas-in "
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </button>
-        </div>
         <div className="board-row">
           {renderSquare(0)}
           {renderSquare(1)}
